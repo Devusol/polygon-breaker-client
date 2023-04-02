@@ -1,6 +1,6 @@
 import { GameEngine } from "react-native-game-engine";
 import { Bodies, Constraint, Engine, World } from "matter-js";
-import { handleTouchSpawner, physics, cullBoxes } from "./systems";
+import { handleTouchSpawner, physics, cullBoxes, handleTouchBreaker } from "./systems";
 import { Dimensions, StyleSheet, Text } from "react-native";
 import { Box, TextRenderer } from "./renderer";
 import { createObject, removeObject } from "./gameutil";
@@ -99,7 +99,7 @@ export const Game = () => {
 
     return (
         <GameEngine
-        systems={[physics, handleTouchSpawner, cullBoxes]}
+        systems={[physics, handleTouchSpawner, cullBoxes, handleTouchBreaker]}
         entities={state}
         >
         </GameEngine>

@@ -1,6 +1,5 @@
-import { Bodies, Engine, World, Composite } from "matter-js";
-import { createObject, removeObject } from "./gameutil";
-import { Box } from "./renderer";
+import { Engine } from "matter-js";
+import { removeObject } from "./gameutil";
 
 let boxIds = 0;
 
@@ -16,13 +15,10 @@ export const physics = (state, { time }) => {
 export const handleTouchSpawner = (state, { touches, screen }) => {
     if(!state.game.isSpawner) return state;
 
-    const world = state.physics.world;
-
     touches.filter(t => t.type == "press").forEach(t => {
         const { event } = t;
 
         state.game.send(0x0, event.pageX / screen.width, event.pageY / screen.height);
-
         // createObject(world, state, screen, event.pageX, event.pageY, boxIds++);
     });
 
@@ -31,7 +27,6 @@ export const handleTouchSpawner = (state, { touches, screen }) => {
 
 const isWithinDist = ([x1, y1], [x2, y2], dist) => {
     const distSqr = Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2);
-
     return distSqr < Math.pow(dist, 2);
 }
 
@@ -46,13 +41,16 @@ export const handleTouchBreaker = (state, { touches, screen }) => {
 
 			if(!body) return;
 			
-            distance([body.position.x, body.position.y], touchPos) < 25
+            if(isWithinDist([body.position.x, body.position.y], touchPos, 25)) {
+                state.game.send(0x1, key);
+            }
 		});
     });
+    
+    return state;
 }
 
 export const cullBoxes = (state, { screen }) => {
-    const world = state.physics.world;
 
     Object.keys(state)
     .filter(key => state[key].body && state[key].body.position.y > screen.height + 30)

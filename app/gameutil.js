@@ -16,6 +16,8 @@ export const createObject = (world, state, screen, x, y, id) => {
 }
 
 export const removeObject = (state, objectID) => {
+    if(!state[objectID]?.body) return;
+    
     const world = state.physics.world;
 
     Composite.remove(world, state[objectID].body);
