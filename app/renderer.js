@@ -1,4 +1,4 @@
-import { Animated } from "react-native";
+import { Animated, Text } from "react-native";
 
 export const Box = (props) => {
     const [width, height] = props.size;
@@ -19,4 +19,14 @@ export const Box = (props) => {
             }}
         />
     );
+}
+
+export const TextRenderer = ({ mutStr, x, y }) => {
+    return (
+        <Text style={{
+            left: x,
+            top: y,
+            position: "absolute",
+        }}>{mutStr.str}</Text>
+    )
 }

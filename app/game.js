@@ -2,8 +2,8 @@ import { GameEngine } from "react-native-game-engine";
 import { Bodies, Constraint, Engine, World } from "matter-js";
 import { handleTouchSpawner, physics, cullBoxes } from "./systems";
 import { Dimensions, StyleSheet, Text } from "react-native";
-import { Box } from "./renderer";
-import { createObject } from "./gameutil";
+import { Box, TextRenderer } from "./renderer";
+import { createObject, removeObject } from "./gameutil";
 import { useState } from "react";
 
 export const Game = () => {
@@ -38,6 +38,9 @@ export const Game = () => {
         send: (header, ...data) => {
             ws.send(JSON.stringify([header, ...data]));
         },
+        displayedText: {
+            str: "Connecting"
+        },
     }
 
     const state = {
@@ -46,6 +49,7 @@ export const Game = () => {
         box: { body: body, size: [boxSize, boxSize], color: "pink", renderer: Box },
         box2: { body: body2, size: [boxSize, boxSize], color: "pink", renderer: Box },
         floor: { body: floor, size: [width, boxSize], color: "#86E9BE", renderer: Box },
+        text: { mutStr: gameState.displayedText, x: 20, y: 25, renderer: TextRenderer }
     };
 
     
@@ -57,8 +61,9 @@ export const Game = () => {
         const header = parsed[0];
 
         if (header == 0x0) { // game init
-            // setText("");
-            gameState.isSpawner = data[0];
+            const spawner = data[0]
+            gameState.displayedText.str = "Playing as " + (spawner ? "spawner" : "breaker");
+            gameState.isSpawner = spawner;
             gameState.isPlaying = true;
         } else if (header == 0x1) { // kick
             alert("You were kicked: " + data[0]);
@@ -69,19 +74,26 @@ export const Game = () => {
 
             createObject(world, state, screen, xPercentage * width, yPercentage * height, id);
         } else if (header == 0x3) { // delete object
+            const id = data[0];
 
+            removeObject(state, id);
         }
     }
 
     ws.onopen = () => {
+        gameState.displayedText.str = "Waiting for other players";
         console.log("SOCKET OPEN");
     }
 
     ws.onclose = () => {
+        gameState.isPlaying = false;
+        gameState.displayedText.str = "Disconnected";
         console.log("SOCKET CLOSED");
     }
     
     ws.onerror = (e) => {
+        gameState.isPlaying = false;
+        gameState.displayedText.str = "Disconnected";
         console.log("SOCKET ERROR", e);
     }
 

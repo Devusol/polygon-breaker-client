@@ -1,4 +1,4 @@
-import { World, Bodies } from "matter-js";
+import { World, Bodies, Composite } from "matter-js";
 import { Box } from "./renderer";
 
 export const createObject = (world, state, screen, x, y, id) => {
@@ -13,4 +13,11 @@ export const createObject = (world, state, screen, x, y, id) => {
         color: "pink",
         renderer: Box
     };
+}
+
+export const removeObject = (state, objectID) => {
+    const world = state.physics.world;
+
+    Composite.remove(world, state[objectID].body);
+    delete state[objectID];
 }

@@ -1,5 +1,5 @@
 import { Bodies, Engine, World, Composite } from "matter-js";
-import { createObject } from "./gameutil";
+import { createObject, removeObject } from "./gameutil";
 import { Box } from "./renderer";
 
 let boxIds = 0;
@@ -55,10 +55,12 @@ export const cullBoxes = (state, { screen }) => {
     const world = state.physics.world;
 
     Object.keys(state)
-    .filter(key => state[key].body && state[key].body.position.y > screen.height * 2)
+    .filter(key => state[key].body && state[key].body.position.y > screen.height + 30)
     .forEach(key => {
-        Composite.remove(world, state[key].body);
-        delete state[key];
+        removeObject(state, key);
+        // sta
+        // Composite.remove(world, state[key].body);
+        // delete state[key];
     });
 
     return state;
