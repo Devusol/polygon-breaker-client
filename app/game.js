@@ -31,7 +31,7 @@ export const Game = () => {
     World.add(world, [body, body2, floor, ]);
     World.addConstraint(world, constraint);
 
-    const ws = new WebSocket("ws://192.168.0.8:5005");
+    const ws = new WebSocket("wss://polygonbreaker.azurewebsites.net");
     const gameState = {
         isSpawner: false,
         isPlaying: false,
