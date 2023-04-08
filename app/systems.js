@@ -15,7 +15,7 @@ export const physics = (state, { time }) => {
 export const handleTouchSpawner = (state, { touches, screen }) => {
     if(!state.game.isSpawner) return state;
 
-    touches.filter(t => t.type == "press").forEach(t => {
+    touches.filter(t => t.type == "start").forEach(t => {
         const { event } = t;
 
         const xP = event.pageX / screen.width;
@@ -39,7 +39,7 @@ const isWithinDist = ([x1, y1], [x2, y2], dist) => {
 export const handleTouchBreaker = (state, { touches, screen }) => {
     if(state.game.isSpawner || !state.game.isPlaying) return state;
 
-    touches.filter(t => t.type == "press").forEach(t => {
+    touches.filter(t => t.type == "start").forEach(t => {
         const { event } = t;
         const touchPos = [event.pageX, event.pageY];
         const dist = Math.trunc(Math.max(screen.width, screen.height) * .075) * .75;

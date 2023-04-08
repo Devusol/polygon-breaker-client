@@ -1,10 +1,9 @@
 import { GameEngine } from "react-native-game-engine";
 import { Bodies, Constraint, Engine, World } from "matter-js";
 import { handleTouchSpawner, physics, cullBoxes, handleTouchBreaker } from "./systems";
-import { Dimensions, StyleSheet, Text } from "react-native";
-import { BoxRenderer, PlaceableAreaRenderer, ReconnectRenderer, TextRenderer } from "./renderer";
-import { createObject, removeObject, updateObject } from "./gameutil";
-import { useState } from "react";
+import { Dimensions } from "react-native";
+import { BoxRenderer, GameFinishRenderer, PlaceableAreaRenderer, ReconnectRenderer, TextRenderer } from "./renderer";
+import { createObject, removeObject } from "./gameutil";
 import { io } from "socket.io-client";
 import { mutStr } from "./mutstr";
 
@@ -46,11 +45,13 @@ export const Game = () => {
     const gameState = {
         isSpawner: false,
         isPlaying: false,
+        isFinished: false,
         socket,
         displayedText: mutStr("Connecting"),
         ping: 0,
         scoreDisp: mutStr("Score: 0"),
-        oppScore: mutStr("Their Score: 0")
+        oppScore: mutStr("Their Score: 0"),
+        time: mutStr("30s"),
     }
 
     const wallColor = "#203b21";
@@ -60,15 +61,22 @@ export const Game = () => {
         floor: { body: floor, size: [width, boxSize * 2], color: wallColor, noBreak: true, renderer: BoxRenderer },
         rightWall: { body: rightWall, size: [wallWidth, wallHeight], color: wallColor, noBreak: true, renderer: BoxRenderer },
         leftWall: { body: leftWall, size: [wallWidth, wallHeight], color: wallColor, noBreak: true, renderer: BoxRenderer },
+
         text: { gameState, mutStr: gameState.displayedText, x: 20, y: 25, renderer: TextRenderer },
         score: { mutStr: gameState.scoreDisp, x: 20, y: 75, renderer: TextRenderer },
         opponentScore: { mutStr: gameState.oppScore, x: 20, y: 100, renderer: TextRenderer },
-        reconnectBtn: { gameState, onPress: () => socket.open(), renderer: ReconnectRenderer },
+        timeDisp: { mutStr: gameState.time, x: 300, y: 75, renderer: TextRenderer },
+
         placeableArea: { gameState, renderer: PlaceableAreaRenderer },
+        gameFinish: { gameState, renderer: GameFinishRenderer },
+        reconnectBtn: { gameState, onPress: () => socket.open(), renderer: ReconnectRenderer },
     };
 
     let pingTime = 0;
     let pingInt;
+
+    // Custom events
+
     socket.on("init", (isSpawner) => {
         gameState.displayedText.str = "Playing as " + (isSpawner ? "spawner" : "breaker");
         gameState.isSpawner = isSpawner;
@@ -118,10 +126,21 @@ export const Game = () => {
         }
     });
 
+    socket.on("time", (t) => {
+        if(t == 0) {
+            gameState.isPlaying = false;
+            gameState.isFinished = true;
+        }
+        gameState.time.str = `${t}s`;
+    });
+
     // Built in events
 
     socket.on("connect", () => {
         console.log("connected as", socket.id);
+        gameState.scoreDisp.str = "Score: 0";
+        gameState.oppScore.str = "Their Score: 0";
+        gameState.time.str = "30s";
         gameState.displayedText.str = "Waiting for another player";
     });
 

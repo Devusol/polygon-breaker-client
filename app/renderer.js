@@ -1,4 +1,4 @@
-import { Animated, Button, StyleSheet, Text, Touchable, View } from "react-native";
+import { Animated, Button, StyleSheet, Text, View } from "react-native";
 
 export const BoxRenderer = (props) => {
     const [width, height] = props.size;
@@ -21,7 +21,7 @@ export const BoxRenderer = (props) => {
     );
 }
 
-export const TextRenderer = ({ gameState, mutStr, x, y }) => {
+export const TextRenderer = ({ mutStr, x, y }) => {
 
     return (
         <Text style={{
@@ -41,6 +41,19 @@ export const ReconnectRenderer = ({ gameState, onPress }) => {
             <Button title="Reconnect?" onPress={onPress}></Button>
         </> : null
     )
+}
+
+export const GameFinishRenderer = ({ gameState }) => {
+    return (
+        gameState.isFinished ? <>
+        <View style={styles.gameFinHolder}>
+            <View style={styles.gameFinish}>
+                <Text style={styles.gameText}>Game Over</Text>
+                <Text style={styles.gameText}>Play Again</Text>
+            </View>
+        </View>
+        </> : null
+    );
 }
 
 export const PlaceableAreaRenderer = ({ gameState }) => {
@@ -66,9 +79,24 @@ const styles = StyleSheet.create({
         alignItems: "center",
         width: "100%",
         height: "100%",
+        position: "absolute"
     },
     btnSpacer: {
         width: "100%",
         height: "50%",
     },
+    gameFinHolder: {
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    gameFinish: {
+        top: 0,
+        right: 0,
+        width: "75%",
+        height: "75%",
+        backgroundColor: "#07788c",
+    },
+    gameText: {
+        fontSize: 50,
+    }
 });
