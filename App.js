@@ -6,11 +6,6 @@ export default function App() {
     return (
         <>
         <Game />
-            {/* <View style={styles.container}>
-                <Text>Waiting for a 2nd player</Text>
-                
-                
-            </View> */}
         </>
     );
 }

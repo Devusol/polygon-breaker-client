@@ -2,9 +2,11 @@ import { GameEngine } from "react-native-game-engine";
 import { Bodies, Constraint, Engine, World } from "matter-js";
 import { handleTouchSpawner, physics, cullBoxes, handleTouchBreaker } from "./systems";
 import { Dimensions, StyleSheet, Text } from "react-native";
-import { Box, TextRenderer } from "./renderer";
-import { createObject, removeObject } from "./gameutil";
+import { BoxRenderer, ReconnectRenderer, TextRenderer } from "./renderer";
+import { createObject, removeObject, updateObject } from "./gameutil";
 import { useState } from "react";
+import { io } from "socket.io-client";
+import { mutStr } from "./mutstr";
 
 export const Game = () => {
 
@@ -15,10 +17,11 @@ export const Game = () => {
     
     const engine = Engine.create();
     const world = engine.world;
-    
-    const body = Bodies.rectangle(width / 2, 0, boxSize, boxSize, { frictionAir: 0.021 });
-    const body2 = Bodies.rectangle(width / 2 + 20, -30, boxSize, boxSize, { frictionAir: 0.021 });
-    const floor = Bodies.rectangle(width / 2, height - boxSize / 2, width, boxSize, { isStatic: true });
+
+    const floor = Bodies.rectangle(width / 2, height - boxSize / 2, width, boxSize * 2, { isStatic: true });
+    const rightWall = Bodies.rectangle(width, height / 2, boxSize, height, { isStatic: true });
+    const leftWall = Bodies.rectangle(0, height / 2, boxSize, height, { isStatic: true });
+
     const constraint = Constraint.create({
         label: "Drag Constraint",
         pointA: { x: 0, y: 0 },
@@ -28,74 +31,96 @@ export const Game = () => {
         angularStiffness: 1,
     });
 
-    World.add(world, [body, body2, floor, ]);
+    World.add(world, [floor, rightWall, leftWall]);
     World.addConstraint(world, constraint);
 
-    const ws = new WebSocket("ws://192.168.0.8:5005");
+    const socket = io("ws://192.168.0.8:3001", {
+        timeout: 4000,
+        reconnection: false,
+    });
+    
     const gameState = {
         isSpawner: false,
         isPlaying: false,
-        send: (header, ...data) => {
-            ws.send(JSON.stringify([header, ...data]));
-        },
-        displayedText: {
-            str: "Connecting"
-        },
+        socket,
+        displayedText: mutStr("Connecting"),
+        ping: 0,
+        scoreDisp: mutStr("Score: 0"),
     }
 
     const state = {
         physics: { engine: engine, world: world, constraint: constraint },
         game: gameState,
-        box: { body: body, size: [boxSize, boxSize], color: "pink", renderer: Box },
-        box2: { body: body2, size: [boxSize, boxSize], color: "pink", renderer: Box },
-        floor: { body: floor, size: [width, boxSize], color: "#86E9BE", renderer: Box },
-        text: { mutStr: gameState.displayedText, x: 20, y: 25, renderer: TextRenderer }
+        floor: { body: floor, size: [width, boxSize * 2], color: "#86E9BE", noBreak: true, renderer: BoxRenderer },
+        rightWall: { body: rightWall, size: [boxSize, height], color: "#86E9BE", noBreak: true, renderer: BoxRenderer },
+        leftWall: { body: leftWall, size: [boxSize, height], color: "#86E9BE", noBreak: true, renderer: BoxRenderer },
+        text: { gameState, mutStr: gameState.displayedText, x: 20, y: 25, renderer: TextRenderer },
+        score: { mutStr: gameState.scoreDisp, x: 20, y: 75, renderer: TextRenderer },
+        reconnectBtn: { gameState, onPress: () => socket.open(), renderer: ReconnectRenderer },
     };
 
-    
-    ws.onmessage = (e) => {
-        const parsed = JSON.parse(e.data);
-        console.log(parsed);
+    let pingTime = 0;
+    let pingInt;
+    socket.on("init", (isSpawner) => {
+        gameState.displayedText.str = "Playing as " + (isSpawner ? "spawner" : "breaker");
+        gameState.isSpawner = isSpawner;
+        gameState.isPlaying = true;
 
-        const data = parsed.slice(1);
-        const header = parsed[0];
-
-        if (header == 0x0) { // game init
-            const spawner = data[0]
-            gameState.displayedText.str = "Playing as " + (spawner ? "spawner" : "breaker");
-            gameState.isSpawner = spawner;
-            gameState.isPlaying = true;
-        } else if (header == 0x1) { // kick
-            alert("You were kicked: " + data[0]);
-        } else if (header == 0x2) { // spawn object
-            const xPercentage = data[0];
-            const yPercentage = data[1];
-            const id = data[2];
-
-            createObject(world, state, screen, xPercentage * width, yPercentage * height, id);
-        } else if (header == 0x3) { // delete object
-            const id = data[0];
-
-            removeObject(state, id);
+        const ping = () => {
+            pingTime = Date.now();
+            socket.emit("p");
         }
-    }
 
-    ws.onopen = () => {
-        gameState.displayedText.str = "Waiting for other players";
-        console.log("SOCKET OPEN");
-    }
+        Object.keys(state).forEach(k => {
+            const entity = state[k];
 
-    ws.onclose = () => {
+            if(entity.body && !entity.noBreak) {
+                removeObject(state, k, false, true);
+            }
+        });
+
+        pingInt = setInterval(ping, 1e4);
+
+        ping();
+    });
+
+    socket.on("spawn", (xPercentage, yPercentage, id) => {
+        createObject(world, state, screen, xPercentage * width, yPercentage * height, id);
+    });
+
+    socket.on("deleteObj", (id) => {
+        removeObject(state, id, false, true);
+    });
+
+    socket.on("playerDisconnect", () => {
+        console.log("other player disconnected")
+    });
+
+    socket.on("p", () => {
+        gameState.ping = Date.now() - pingTime;
+    });
+
+    socket.on("score", (score) => {
+        gameState.scoreDisp.str = `Score: ${score}`;
+    });
+
+    // Built in events
+
+    socket.on("connect", () => {
+        console.log("connected as", socket.id);
+        gameState.displayedText.str = "Waiting for another player";
+    });
+
+    socket.on("disconnect", () => {
         gameState.isPlaying = false;
         gameState.displayedText.str = "Disconnected";
-        console.log("SOCKET CLOSED");
-    }
-    
-    ws.onerror = (e) => {
-        gameState.isPlaying = false;
-        gameState.displayedText.str = "Disconnected";
-        console.log("SOCKET ERROR", e);
-    }
+        clearInterval(pingInt);
+    });
+
+    socket.on("connect_error", (e) => {
+        console.log("er connecting", e);
+        alert("there was an error connecting to the server");
+    });
 
     return (
         <GameEngine

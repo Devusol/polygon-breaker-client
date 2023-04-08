@@ -1,6 +1,6 @@
-import { Animated, Text } from "react-native";
+import { Animated, Button, Text, Touchable, View } from "react-native";
 
-export const Box = (props) => {
+export const BoxRenderer = (props) => {
     const [width, height] = props.size;
     const x = props.body.position.x - width / 2;
     const y = props.body.position.y - height / 2;
@@ -21,12 +21,27 @@ export const Box = (props) => {
     );
 }
 
-export const TextRenderer = ({ mutStr, x, y }) => {
+export const TextRenderer = ({ gameState, mutStr, x, y }) => {
+
     return (
         <Text style={{
             left: x,
             top: y,
             position: "absolute",
+            zIndex: 1
         }}>{mutStr.str}</Text>
+    )
+}
+
+export const ReconnectRenderer = ({ gameState, onPress }) => {
+    return (
+        gameState.socket.disconnected ? <>
+            <View style={{
+                width: "100%",
+                height: "50%",
+            }}></View>
+
+            <Button title="Reconnect?" onPress={onPress}></Button>
+        </> : null
     )
 }

@@ -17,8 +17,7 @@ export const handleTouchSpawner = (state, { touches, screen }) => {
 
     touches.filter(t => t.type == "press").forEach(t => {
         const { event } = t;
-
-        state.game.send(0x0, event.pageX / screen.width, event.pageY / screen.height);
+        state.game.socket.emit("spawnObj", event.pageX / screen.width, event.pageY / screen.height);
         // createObject(world, state, screen, event.pageX, event.pageY, boxIds++);
     });
 
@@ -31,18 +30,20 @@ const isWithinDist = ([x1, y1], [x2, y2], dist) => {
 }
 
 export const handleTouchBreaker = (state, { touches, screen }) => {
-    if(state.game.isSpawner) return state;
+    if(state.game.isSpawner || !state.game.isPlaying) return state;
 
     touches.filter(t => t.type == "press").forEach(t => {
         const { event } = t;
         const touchPos = [event.pageX, event.pageY];
         Object.keys(state).forEach(key => {
-			let body = state[key].body;
+            const entity = state[key];
+			let body = entity.body;
 
-			if(!body) return;
+			if(!body || entity.noBreak) return;
 			
             if(isWithinDist([body.position.x, body.position.y], touchPos, 25)) {
-                state.game.send(0x1, key);
+                // state.game.socket.emit("deleteObj", key);
+                removeObject(state, key, false);
             }
 		});
     });
@@ -55,7 +56,7 @@ export const cullBoxes = (state, { screen }) => {
     Object.keys(state)
     .filter(key => state[key].body && state[key].body.position.y > screen.height + 30)
     .forEach(key => {
-        removeObject(state, key);
+        removeObject(state, key, true);
         // sta
         // Composite.remove(world, state[key].body);
         // delete state[key];
