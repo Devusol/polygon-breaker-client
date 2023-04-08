@@ -17,8 +17,15 @@ export const handleTouchSpawner = (state, { touches, screen }) => {
 
     touches.filter(t => t.type == "press").forEach(t => {
         const { event } = t;
-        state.game.socket.emit("spawnObj", event.pageX / screen.width, event.pageY / screen.height);
-        // createObject(world, state, screen, event.pageX, event.pageY, boxIds++);
+
+        const xP = event.pageX / screen.width;
+        const yP = event.pageY / screen.height;
+
+        if(xP < .25 || xP > .75 || yP > .5) {
+            return;
+        }
+
+        state.game.socket.emit("spawnObj", xP, yP);
     });
 
     return state;
@@ -35,13 +42,14 @@ export const handleTouchBreaker = (state, { touches, screen }) => {
     touches.filter(t => t.type == "press").forEach(t => {
         const { event } = t;
         const touchPos = [event.pageX, event.pageY];
+        const dist = Math.trunc(Math.max(screen.width, screen.height) * .075) * .75;
         Object.keys(state).forEach(key => {
             const entity = state[key];
 			let body = entity.body;
 
 			if(!body || entity.noBreak) return;
 			
-            if(isWithinDist([body.position.x, body.position.y], touchPos, 25)) {
+            if(isWithinDist([body.position.x, body.position.y], touchPos, dist)) {
                 // state.game.socket.emit("deleteObj", key);
                 removeObject(state, key, false);
             }

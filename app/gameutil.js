@@ -10,7 +10,7 @@ export const createObject = (world, state, screen, x, y, objectID) => {
     state[objectID] =  {
         body,
         size: [boxSize, boxSize],
-        color: "pink",
+        color: "#d42417",
         renderer: BoxRenderer
     };
 }

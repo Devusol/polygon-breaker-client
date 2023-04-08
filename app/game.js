@@ -2,7 +2,7 @@ import { GameEngine } from "react-native-game-engine";
 import { Bodies, Constraint, Engine, World } from "matter-js";
 import { handleTouchSpawner, physics, cullBoxes, handleTouchBreaker } from "./systems";
 import { Dimensions, StyleSheet, Text } from "react-native";
-import { BoxRenderer, ReconnectRenderer, TextRenderer } from "./renderer";
+import { BoxRenderer, PlaceableAreaRenderer, ReconnectRenderer, TextRenderer } from "./renderer";
 import { createObject, removeObject, updateObject } from "./gameutil";
 import { useState } from "react";
 import { io } from "socket.io-client";
@@ -19,8 +19,12 @@ export const Game = () => {
     const world = engine.world;
 
     const floor = Bodies.rectangle(width / 2, height - boxSize / 2, width, boxSize * 2, { isStatic: true });
-    const rightWall = Bodies.rectangle(width, height / 2, boxSize, height, { isStatic: true });
-    const leftWall = Bodies.rectangle(0, height / 2, boxSize, height, { isStatic: true });
+
+    const wallY = height * .7;
+    const wallHeight = height / 4;
+    const wallWidth = boxSize / 2;
+    const rightWall = Bodies.rectangle(width, wallY, wallWidth, wallHeight, { isStatic: true });
+    const leftWall = Bodies.rectangle(0, wallY, wallWidth, wallHeight, { isStatic: true });
 
     const constraint = Constraint.create({
         label: "Drag Constraint",
@@ -46,17 +50,21 @@ export const Game = () => {
         displayedText: mutStr("Connecting"),
         ping: 0,
         scoreDisp: mutStr("Score: 0"),
+        oppScore: mutStr("Their Score: 0")
     }
 
+    const wallColor = "#203b21";
     const state = {
         physics: { engine: engine, world: world, constraint: constraint },
         game: gameState,
-        floor: { body: floor, size: [width, boxSize * 2], color: "#86E9BE", noBreak: true, renderer: BoxRenderer },
-        rightWall: { body: rightWall, size: [boxSize, height], color: "#86E9BE", noBreak: true, renderer: BoxRenderer },
-        leftWall: { body: leftWall, size: [boxSize, height], color: "#86E9BE", noBreak: true, renderer: BoxRenderer },
+        floor: { body: floor, size: [width, boxSize * 2], color: wallColor, noBreak: true, renderer: BoxRenderer },
+        rightWall: { body: rightWall, size: [wallWidth, wallHeight], color: wallColor, noBreak: true, renderer: BoxRenderer },
+        leftWall: { body: leftWall, size: [wallWidth, wallHeight], color: wallColor, noBreak: true, renderer: BoxRenderer },
         text: { gameState, mutStr: gameState.displayedText, x: 20, y: 25, renderer: TextRenderer },
         score: { mutStr: gameState.scoreDisp, x: 20, y: 75, renderer: TextRenderer },
+        opponentScore: { mutStr: gameState.oppScore, x: 20, y: 100, renderer: TextRenderer },
         reconnectBtn: { gameState, onPress: () => socket.open(), renderer: ReconnectRenderer },
+        placeableArea: { gameState, renderer: PlaceableAreaRenderer },
     };
 
     let pingTime = 0;
@@ -100,8 +108,14 @@ export const Game = () => {
         gameState.ping = Date.now() - pingTime;
     });
 
-    socket.on("score", (score) => {
-        gameState.scoreDisp.str = `Score: ${score}`;
+    socket.on("score", (spawnerScore, breakerScore) => {
+        if(gameState.isSpawner) {
+            gameState.scoreDisp.str = `Score: ${spawnerScore}`;
+            gameState.oppScore.str = `Their Score: ${breakerScore}`;
+        } else {
+            gameState.scoreDisp.str = `Score: ${breakerScore}`;
+            gameState.oppScore.str = `Their Score: ${spawnerScore}`;
+        }
     });
 
     // Built in events
@@ -124,16 +138,9 @@ export const Game = () => {
 
     return (
         <GameEngine
-        systems={[physics, handleTouchSpawner, cullBoxes, handleTouchBreaker]}
+        systems={[handleTouchSpawner, cullBoxes, handleTouchBreaker, physics]}
         entities={state}
         >
         </GameEngine>
-    )
+    );
 }
-
-const styles = StyleSheet.create({
-    text: {
-        left: 20,
-        top: 25,
-    }
-})
