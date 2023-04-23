@@ -1,10 +1,10 @@
 import { StyleSheet } from 'react-native';
-import { Game } from './app/game';
+import { GameWrapper } from './app/gameWrapper';
 
 export default function App() {
     return (
         <>
-        <Game />
+            <GameWrapper />
         </>
     );
 }

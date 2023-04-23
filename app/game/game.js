@@ -37,9 +37,13 @@ export const Game = () => {
     World.add(world, [floor, rightWall, leftWall]);
     World.addConstraint(world, constraint);
 
-    const socket = io("ws://192.168.0.8:3001", {
+    const socket = io("ws://192.168.0.10:3001", {
         timeout: 4000,
         reconnection: false,
+        auth: {
+            email: "test@email.com",
+            pwd: "supersecret"
+        },
     });
     
     const gameState = {
