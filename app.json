@@ -15,7 +15,8 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.thinkwisely.reactgame"
     },
     "android": {
       "adaptiveIcon": {
@@ -31,6 +32,7 @@
       "eas": {
         "projectId": "1843e901-6b7d-4e3f-a85f-b9709fc8bbbd"
       }
-    }
+    },
+    "owner": "thinkwisely"
   }
 }
