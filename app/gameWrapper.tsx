@@ -19,7 +19,7 @@ export const GameWrapper = () => {
         if (tmpToken != null) {
             let failed = false;
 
-            const data = await httpPost("auth", {token: tmpToken + " s"}).catch(() => {
+            const data = await httpPost("auth", {token: tmpToken }).catch(() => {
                 return { success: true }
             });
 
