@@ -1,4 +1,5 @@
 import { World, Bodies, Composite, Body } from "matter-js";
+import { ScaledSize } from "react-native/types";
 import { BoxRenderer } from "./renderer";
 
 export const createObject = (world, state, screen, x, y, objectID) => {
@@ -15,7 +16,7 @@ export const createObject = (world, state, screen, x, y, objectID) => {
     };
 }
 
-export const removeObject = (state, objectID, didFallOff, noSend = false) => {
+export const removeObject = (state, objectID: string, didFallOff: boolean | undefined, noSend = false) => {
     if(!state[objectID]?.body) return;
     
     const world = state.physics.world;
@@ -35,4 +36,9 @@ export const updateObject = (state, screen, objectID, xPercentage, yPercentage, 
     });
 
     Body.setAngle(body, angle);
+}
+
+export const getObjectIds = (state, screen: ScaledSize) => {
+    return Object.keys(state)
+    .filter(key => state[key].body);
 }

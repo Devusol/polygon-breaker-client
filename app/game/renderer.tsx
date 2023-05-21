@@ -1,5 +1,11 @@
 import { Animated, Button, StyleSheet, Text, View } from "react-native";
 
+export const enum WinState {
+    WIN,
+    LOSE,
+    DRAW,
+}
+
 export const BoxRenderer = (props) => {
     const [width, height] = props.size;
     const x = props.body.position.x - width / 2;
@@ -21,8 +27,9 @@ export const BoxRenderer = (props) => {
     );
 }
 
-export const TextRenderer = ({ mutStr, x, y }) => {
-
+export const TextRenderer = ({ mutStr, x, y, gameState }) => {
+    if(gameState.isFinished) return null;
+    
     return (
         <Text style={{
             left: x,
@@ -43,14 +50,12 @@ export const ReconnectRenderer = ({ gameState, onPress }) => {
     )
 }
 
-export const GameFinishRenderer = ({ gameState }) => {
+export const RoundFinishRenderer = ({ gameState }) => {
     return (
         gameState.isFinished ? <>
-        <View style={styles.gameFinHolder}>
-            <View style={styles.gameFinish}>
-                <Text style={styles.gameText}>Game Over</Text>
-                <Text style={styles.gameText}>Play Again</Text>
-            </View>
+        <View style={styles.gameFinish}>
+            <Text style={styles.gameText}>Round Over</Text>
+            <Text style={styles.gameText}>{gameState.winState == WinState.WIN ? "You Won!" : gameState.winState == WinState.LOSE ? "You Lost." : "Tie!"}</Text>
         </View>
         </> : null
     );
@@ -85,15 +90,13 @@ const styles = StyleSheet.create({
         width: "100%",
         height: "50%",
     },
-    gameFinHolder: {
+    gameFinish: {
         justifyContent: "center",
         alignItems: "center",
-    },
-    gameFinish: {
         top: 0,
         right: 0,
-        width: "75%",
-        height: "75%",
+        width: "100%",
+        height: "100%",
         backgroundColor: "#07788c",
     },
     gameText: {
