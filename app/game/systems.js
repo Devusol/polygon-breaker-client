@@ -1,10 +1,10 @@
 import { Engine } from "matter-js";
-import { removeObject } from "./gameutil";
+import { getObjectIds, removeObject } from "./gameutil";
 
 let boxIds = 0;
 
 export const physics = (state, { time }) => {
-    if(!state.game.isPlaying) return state;
+    // if(!state.game.isPlaying) return state;
 
     const engine = state.physics.engine;
     Engine.update(engine, time.delta);
@@ -13,7 +13,7 @@ export const physics = (state, { time }) => {
 }
 
 export const handleTouchSpawner = (state, { touches, screen }) => {
-    if(!state.game.isSpawner) return state;
+    if(!state.game.isSpawner || !state.game.isPlaying) return state;
 
     touches.filter(t => t.type == "start").forEach(t => {
         const { event } = t;
@@ -61,8 +61,8 @@ export const handleTouchBreaker = (state, { touches, screen }) => {
 
 export const cullBoxes = (state, { screen }) => {
 
-    Object.keys(state)
-    .filter(key => state[key].body && state[key].body.position.y > screen.height + 30)
+    getObjectIds(state, screen)
+    .filter(key => state[key].body.position.y > screen.height + 30)
     .forEach(key => {
         removeObject(state, key, true);
         // sta
